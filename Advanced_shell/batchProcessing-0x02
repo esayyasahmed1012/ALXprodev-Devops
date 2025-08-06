@@ -1,16 +1,29 @@
 #!/bin/bash
 DATA_DIR="pokemon_data"
 mkdir -p "$DATA_DIR"
+
+error_log='errors.txt'
+>'$error_log'
+
 pokemon_list=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
 for name in "${pokemon_list[@]}"; do
     echo "Fetching data for $name..."
     lower_name=$(echo "$name" | tr '[:upper:]' '[:lower:]')
     url="https://pokeapi.co/api/v2/pokemon/$lower_name"
     output_file="$DATA_DIR/${lower_name}.json"
-    if curl -s -f "$url" -o "$output_file"; then
-        echo "Saved data to $output_file"
-    else
-        echo "Failed to fetch data for $name" >&2
+    success=false
+    for attempt in {1..3}; do
+        if curl -s -f "$url" -o "$output_file"; then
+            echo "Saved data to $output_file"
+            success=true
+        else
+            echo "Attempt $attempt failed for $name"
+            sleep 2
+    fi
+done
+    if !$success; then
+        echo "[$(date)] Failed to fetch data for $name after 3 attempts" >> "$error_log"
+        echo "Skipped $name after 3 failed attempts"
     fi
     sleep 2
-done
+done 
