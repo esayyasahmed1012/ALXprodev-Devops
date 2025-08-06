@@ -3,16 +3,25 @@ OUTPUT_DIR="pokemon_data_parallel"
 mkdir -p "$OUTPUT_DIR"
 fetch_pokemon_data() {
     local name="$1"
-    local output_file="${OUTPUT_DIR}/${name,,}.json"  
+    local output_file="${OUTPUT_DIR}/${name,,}.json"
     curl -s "https://pokeapi.co/api/v2/pokemon/${name,,}" -o "$output_file"
     if [[ $? -ne 0 ]]; then
         echo "Failed to fetch data for $name" >> error.log
     fi
 }
 pokemon_list=(Bulbasaur Ivysaur Venusaur Charmander Charmeleon)
+pids=()
 for name in "${pokemon_list[@]}"; do
     fetch_pokemon_data "$name" &
+    pids+=($!)
 done
+echo "Running background jobs:"
+jobs
+sleep 1  
+if jobs %1 &> /dev/null; then
+    echo "Terminating job %1"
+    kill %1
+fi
 wait
 
-echo "All Pokémon data fetched in parallel and saved to $OUTPUT_DIR"
+echo "Batch processing completed."
